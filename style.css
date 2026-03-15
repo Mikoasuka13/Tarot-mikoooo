@@ -1,0 +1,181 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  /* 神秘的星空紫蓝色调，原封不动 */
+  background: radial-gradient(circle at 50% 30%, #3d2a91, #1e0d7c, #0d053d);
+  color: #e0d8ff;
+  font-family: 'Georgia', serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  cursor: none; 
+}
+
+/* 动态地球背景层，原封不动 */
+.background-effects {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.background-effects::before {
+  content: '';
+  position: absolute;
+  top: 50%; 
+  left: 50%;
+  width: 150vmax; 
+  height: 150vmax;
+  background: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+  opacity: 0.6; 
+  mix-blend-mode: screen; 
+  animation: earth-rotation 250s linear infinite; 
+}
+
+@keyframes earth-rotation {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* 星星闪烁层，原封不动 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(white 0.8px, transparent 0.8px), radial-gradient(#ffccff 1px, transparent 1px);
+  background-size: 85px 85px, 60px 60px;
+  opacity: 0.3;
+  animation: stars-twinkle 4s infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes stars-twinkle { 0% { opacity: 0.2; } 100% { opacity: 0.5; } }
+
+.app { position: relative; z-index: 2; padding: 20px 0; text-align: center; display: flex; flex-direction: column; min-height: 100vh; }
+header { margin-bottom: 10px; }
+h1 { font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: 10px; color: #d0bfff; text-shadow: 0 0 40px #ff99cc; margin-bottom: 8px; }
+.miko-title { font-size: clamp(1rem, 3vw, 1.5rem); letter-spacing: 5px; color: #ff99cc; margin-bottom: 15px; }
+
+/* 你的专属文案，原封不动 */
+.subtitle { font-size: clamp(0.9rem, 2vw, 1.1rem); opacity: 0.85; letter-spacing: 1.5px; margin-bottom: 20px; color: #c9b3ff; line-height: 1.5; }
+
+button, select {
+  background: rgba(30,15,70,0.6);
+  backdrop-filter: blur(14px);
+  border: 1.5px solid #ff99cc;
+  color: #d8cfff;
+  padding: 10px 25px;
+  font-size: 1rem;
+  border-radius: 60px;
+  margin: 5px;
+  transition: all 0.3s;
+  cursor: none; 
+}
+button:hover { background: rgba(255,150,200,0.3); transform: translateY(-3px); }
+
+/* --- 真正的 3D 轮盘区域 --- */
+.wheel-wrapper {
+  position: relative;
+  height: 50vh; 
+  min-height: 400px;
+  width: 100vw;
+  margin: 10px 0 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center; 
+  perspective: 1600px; 
+  overflow: hidden;
+  cursor: grab;
+}
+.wheel-wrapper:active { cursor: grabbing; }
+
+.card-container {
+  position: relative;
+  width: clamp(55px, 6.5vw, 85px); 
+  height: clamp(95px, 10vw, 140px);
+  transform-style: preserve-3d; 
+  will-change: transform;
+}
+
+/* 【核心定制】：实体厚重的墨绿打底 */
+.deck-card {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 6px; 
+  background-color: #122b1c; /* 绝对实心的复古墨绿色 */
+  box-shadow: 0 8px 25px rgba(0,0,0,0.95); /* 实体纸板阴影 */
+  transition: transform 0.6s cubic-bezier(0.23,1,0.32,1), opacity 0.6s, box-shadow 0.3s;
+  border: 1px solid #122b1c; /* 去掉边框反光，更像纸牌 */
+  transform-origin: center center;
+  opacity: 0; 
+  transform: scale(0); 
+}
+.deck-card:hover:not(.selected) { 
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.6); 
+  transform: translateY(-5px); 
+}
+
+/* --- 【完美复刻】：墨绿底 + 鎏金双边框卡背 --- */
+.deck-card .card-back {
+  width: 100%; height: 100%;
+  background-color: #122b1c; /* 墨绿底色 */
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden; /* 防止文字溢出 */
+}
+
+/* 鎏金双重内边框 */
+.deck-card .card-back::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1.5px solid #d4af37; /* 主烫金边框 */
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 2;
+}
+.deck-card .card-back::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(212, 175, 55, 0.6); /* 内侧细金线 */
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 【新增】：白色英文手稿文字样式 */
+.deck-card .card-back .back-text {
+  position: absolute;
+  inset: 12px;
+  color: rgba(255, 255, 255, 0.85); /* 清晰的白色文字 */
+  font-family: 'Brush Script MT', 'Lucida Handwriting', 'Snell Roundhand', cursive;
+  font-size: 8px; /* 字体小而密，模拟整篇手稿 */
+  line-height: 1.5;
+  text-align: left;
+  transform: rotate(-3deg); /* 微微倾斜，还原真实手写感 */
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.action-area { margin-bottom: 20px; min-height: 50px; }
+
+/* 解读区，原封不动 */
+.interpretation-area { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 20px; padding: 20px; max-width: 100%; justify-content: flex-start; background: rgba(10, 5, 30, 0.5); border-top: 1px solid rgba(255,153,204,0.3); }
+@media (min-width: 900px) { .interpretation-area { justify-content: center; } }
+
+.interp-card { background: rgba(20,10,55,0.9); backdrop-filter: blur(10px); border: 1.5px solid #ff99cc; border-radius: 16px; padding: 15px; width: 240px; flex: 0 0 auto; text-align: center; cursor: none; transition: all 0.3s ease; }
+.interp-card img { width: 100%; height: auto; margin: 0 auto 10px; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: transform 0.6s; }
+.interp-card h3 { font-size: 1.1rem; color: #d0bfff; }
+.interp-card p { margin-top: 10px; font-size: 0.85rem; line-height: 1.5; color: #e0d8ff; }
+.interp-card small { color: #ff99cc; display: block; margin-top: 8px; font-weight: bold; font-size: 0.8rem; }
+
+#catCursor { position: fixed; font-size: 24px; pointer-events: none; z-index: 10000; text-shadow: 0 0 15px #ff66aa; transform: translate(-50%, -50%); }
+#trailCanvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; }
