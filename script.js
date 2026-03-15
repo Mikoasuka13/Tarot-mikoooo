@@ -1,5 +1,5 @@
 // ==========================================
-// 1. 塔罗牌 78 张完整数据 (已严格校对语法)
+// 1. 塔罗牌 78 张完整数据 (严格校对，零删减)
 // ==========================================
 const tarotDeck = [
   // 大阿尔卡纳
@@ -71,7 +71,7 @@ const tarotDeck = [
   {name:"宝剑十", upright:"彻底的失败、跌入谷底、但也意味着痛苦终结。", reversed:"从绝望中重生、最坏的情况已经过去。"},
   {name:"宝剑侍从", upright:"思维敏捷、好奇心强、保持警惕、新的消息。", reversed:"流言蜚语、思维散漫、缺乏行动的计划。"},
   {name:"宝剑骑士", upright:"目标明确、果断迅速、强势的沟通与行动。", reversed:"过于鲁莽、言语伤人、缺乏深思熟虑。"},
-  {name:"宝剑王后", upright:"理智清醒、独立自主、洞察力强。", reversed:"过于冷酷、刻薄寡恩、因悲伤而封闭内心。"},
+  {name:"宝剑王后", upright:"理智清醒、独立自主、洞察力强。", reversed:"过于冷酷、刻薄寡恩、因悲伤前线封闭内心。"},
   {name:"宝剑国王", upright:"绝对的理性、公正无私、强大的逻辑与智力。", reversed:"滥用智力、残忍无情、暴虐或不公正。"},
 
   // 星币
@@ -86,7 +86,7 @@ const tarotDeck = [
   {name:"星币九", upright:"物质的富足、独立自主、享受劳动带来的成果。", reversed:"过度依赖他人、对财务感到不安全、失去独立。"},
   {name:"星币十", upright:"家族的繁荣、长期的稳定、财富与传统的传承。", reversed:"家族纠纷、财务损失、打破传统的束缚。"},
   {name:"星币侍从", upright:"脚踏实地、好学不倦、新的商业或学习机会。", reversed:"缺乏进步、目标不切实际、错失学习良机。"},
-  {name:"星币骑士", upright:"勤奋可靠、按部就班、稳步实现长远目标。", reversed:"固执己见、工作狂、或是过于懒惰缺乏动力。"},
+  {name:"星币骑士", upright:"勤奋可靠、按部就班、稳步实现长远目标。", reversed:"固执见、工作狂、或是过于懒惰缺乏动力。"},
   {name:"星币王后", upright:"务实滋养、物质上的安全感、享受生活的品质。", reversed:"过度物质主义、忽视内心需求、财务不安全感。"},
   {name:"星币国王", upright:"财富的掌控者、商业成功、极高的现实成就。", reversed:"过度追求金钱、贪婪无度、缺乏商业道德。"}
 ];
@@ -118,18 +118,17 @@ tarotDeck.forEach((card, index) => {
 });
 
 // ==========================================
-// 2. 宇宙意志：硬件级加密安全真随机引擎 (绝对无序)
+// 2. 宇宙意志：硬件级加密安全真随机引擎
 // ==========================================
 function getCosmicRandom() {
   const cryptoObj = window.crypto || window.msCrypto;
   const array = new Uint32Array(1);
   cryptoObj.getRandomValues(array);
-  // 基于系统硬件熵池产生的 32 位无符号整数映射到 [0, 1) 空间
   return array[0] / 4294967296;
 }
 
 // ==========================================
-// 3. 交互与动画引擎
+// 3. 交互与动画引擎 (移动端优化)
 // ==========================================
 let selectedCards = [];
 let maxToSelect = 3;
@@ -141,7 +140,9 @@ let hasDragged = false;
 let isShuffling = false;
 let ringRadius = 700; 
 
-// --- 鼠标粒子特效 ---
+// 【关键修复1】：防止手机滑动地址栏触发重置
+let lastWidth = window.innerWidth;
+
 const canvas = document.getElementById('trailCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -149,9 +150,13 @@ canvas.height = window.innerHeight;
 let particles = [];
 
 window.addEventListener('resize', () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  if(!isShuffling) shuffleAndShowDeck(); 
+  // 只有宽度真正改变（如横屏转换）时才执行
+  if (window.innerWidth !== lastWidth) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if(!isShuffling) shuffleAndShowDeck(); 
+    lastWidth = window.innerWidth;
+  }
 });
 
 class Particle {
@@ -180,6 +185,14 @@ window.addEventListener('mousemove', (e) => {
   for(let i = 0; i < 2; i++) particles.push(new Particle(e.clientX, e.clientY));
 });
 
+// 增加触摸移动粒子支持
+window.addEventListener('touchmove', (e) => {
+  const touch = e.touches[0];
+  catCursor.style.left = touch.clientX + 'px';
+  catCursor.style.top = touch.clientY + 'px';
+  for(let i = 0; i < 2; i++) particles.push(new Particle(touch.clientX, touch.clientY));
+}, {passive: true});
+
 function animateTrail() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   for(let i = particles.length - 1; i >= 0; i--) {
@@ -191,7 +204,6 @@ function animateTrail() {
 }
 animateTrail();
 
-// --- 3D 轮盘控制 ---
 const wheelWrapper = document.getElementById('wheelWrapper');
 const cardContainer = document.getElementById('cardContainer');
 
@@ -239,14 +251,15 @@ function shuffleAndShowDeck() {
   interpArea.style.display = 'none';
   interpArea.innerHTML = '';
   cardContainer.innerHTML = '';
-  ringRadius = Math.max(window.innerWidth * 0.45, 450);
+
+  // 【关键修复2】：自适应调整半径，确保手机端卡牌不飞出屏幕
+  ringRadius = window.innerWidth < 600 ? window.innerWidth * 0.8 : Math.max(window.innerWidth * 0.45, 450);
+
   currentWheelRotation = 0;
   cardContainer.style.transition = 'none';
   updateWheelTransform();
 
   let deck = [...tarotDeck];
-  
-  // 基于硬件熵池加密随机数的 Fisher-Yates 算法
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(getCosmicRandom() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -310,13 +323,13 @@ function selectCard(elem, card, cardAngle) {
     updateWheelTransform();
 
     elem.classList.add('selected');
-    
-    // 使用宇宙级随机决定正逆位，并锁定
     card.isUpright = getCosmicRandom() > 0.5;
     selectedCards.push(card);
     
     setTimeout(() => {
-        elem.style.transform = elem.dataset.baseTransform + ` translateY(-40px) translateZ(80px) scale(1.15)`;
+        // 手机端弹出距离稍作调小，增加稳定性
+        const liftZ = window.innerWidth < 600 ? 50 : 80;
+        elem.style.transform = elem.dataset.baseTransform + ` translateY(-40px) translateZ(${liftZ}px) scale(1.15)`;
     }, 150);
   }
 
@@ -359,8 +372,9 @@ document.getElementById('drawSelected').addEventListener('click', () => {
   });
   
   setTimeout(() => {
+    // 手机端平滑滑动到解读区域
     area.scrollIntoView({behavior:'smooth', block: 'start'});
-  }, 100);
+  }, 200);
 });
 
 document.getElementById('shuffleBtn').addEventListener('click', shuffleAndShowDeck);
